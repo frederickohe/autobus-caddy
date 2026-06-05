@@ -1,0 +1,67 @@
+# Autobus platform — single Caddy entrypoint
+# Container DNS names must match container_name in each compose stack.
+
+api.useautobus.com {
+	reverse_proxy autobus_backend:8000 {
+		header_up Host {host}
+		header_up X-Forwarded-Proto {scheme}
+		header_up X-Real-IP {remote}
+		header_up X-Forwarded-For {remote}
+	}
+
+	request_body {
+		max_size 50MB
+	}
+}
+
+useautobus.com, www.useautobus.com {
+	reverse_proxy autobus_web:80 {
+		header_up Host {host}
+		header_up X-Forwarded-Proto {scheme}
+		header_up X-Real-IP {remote}
+		header_up X-Forwarded-For {remote}
+	}
+
+	request_body {
+		max_size 50MB
+	}
+}
+
+chatwoot.useautobus.com {
+	reverse_proxy chatwoot_rails:3000 {
+		header_up Host {host}
+		header_up X-Forwarded-Proto {scheme}
+		header_up X-Real-IP {remote}
+		header_up X-Forwarded-For {remote}
+	}
+
+	request_body {
+		max_size 50MB
+	}
+}
+
+postiz.useautobus.com {
+	reverse_proxy postiz:5000 {
+		header_up Host {host}
+		header_up X-Forwarded-Proto {scheme}
+		header_up X-Real-IP {remote}
+		header_up X-Forwarded-For {remote}
+	}
+
+	request_body {
+		max_size 50MB
+	}
+}
+
+rag.useautobus.com {
+	reverse_proxy greenbrain_rag_api:8088 {
+		header_up Host {host}
+		header_up X-Forwarded-Proto {scheme}
+		header_up X-Real-IP {remote}
+		header_up X-Forwarded-For {remote}
+	}
+
+	request_body {
+		max_size 10MB
+	}
+}
