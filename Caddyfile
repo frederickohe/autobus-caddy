@@ -65,3 +65,15 @@ rag.useautobus.com {
 		max_size 10MB
 	}
 }
+
+portainer.useautobus.com {
+	reverse_proxy https://autobus_portainer:9443 {
+		transport http {
+			tls_insecure_skip_verify
+		}
+		header_up Host {host}
+		header_up X-Forwarded-Proto {scheme}
+		header_up X-Real-IP {remote}
+		header_up X-Forwarded-For {remote}
+	}
+}
