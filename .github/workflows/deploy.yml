@@ -19,5 +19,4 @@ jobs:
           script: |
             set -e
             cd /var/www/autobus-caddy
-            chmod +x scripts/deploy.sh
             bash scripts/deploy.sh
