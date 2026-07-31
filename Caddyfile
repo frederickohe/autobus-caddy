@@ -1,7 +1,13 @@
 # Autobus platform — single Caddy entrypoint
 # Container DNS names must match container_name in each compose stack.
+#
+# SECURITY: Portainer and pgAdmin are intentionally NOT exposed on public DNS.
+# Access them via SSH tunnel or VPN, e.g.:
+#   ssh -L 9443:127.0.0.1:9443 -L 5050:127.0.0.1:5050 user@vps
 
 api.useautobus.com {
+	# App-level Redis rate limits apply behind this proxy (see autobus RateLimitMiddleware).
+	# Trust X-Forwarded-For from this edge only.
 	reverse_proxy autobus_backend:8000 {
 		header_up Host {host}
 		header_up X-Forwarded-Proto {scheme}
@@ -15,11 +21,32 @@ api.useautobus.com {
 }
 
 useautobus.com, www.useautobus.com {
-	reverse_proxy autobus_web:80 {
-		header_up Host {host}
-		header_up X-Forwarded-Proto {scheme}
-		header_up X-Real-IP {remote}
-		header_up X-Forwarded-For {remote}
+	# Meta WhatsApp Embedded Signup / Instagram Business Login / Blotato OAuth land here.
+	handle /api/social/callback* {
+		reverse_proxy autobus_backend:8000 {
+			header_up Host {host}
+			header_up X-Forwarded-Proto {scheme}
+			header_up X-Real-IP {remote}
+			header_up X-Forwarded-For {remote}
+		}
+	}
+
+	handle /api/v1/whatsapp/* {
+		reverse_proxy autobus_backend:8000 {
+			header_up Host {host}
+			header_up X-Forwarded-Proto {scheme}
+			header_up X-Real-IP {remote}
+			header_up X-Forwarded-For {remote}
+		}
+	}
+
+	handle {
+		reverse_proxy autobus_web:80 {
+			header_up Host {host}
+			header_up X-Forwarded-Proto {scheme}
+			header_up X-Real-IP {remote}
+			header_up X-Forwarded-For {remote}
+		}
 	}
 
 	request_body {
@@ -66,27 +93,23 @@ rag.useautobus.com {
 	}
 }
 
-portainer.useautobus.com {
-	reverse_proxy https://autobus_portainer:9443 {
-		transport http {
-			tls_insecure_skip_verify
-		}
-		header_up Host {host}
-		header_up X-Forwarded-Proto {scheme}
-		header_up X-Real-IP {remote}
-		header_up X-Forwarded-For {remote}
-	}
-}
-
-pgadmin.useautobus.com {
-	reverse_proxy autobus_pgadmin:80 {
-		header_up Host {host}
-		header_up X-Forwarded-Proto {scheme}
-		header_up X-Real-IP {remote}
-		header_up X-Forwarded-For {remote}
-	}
-
-	request_body {
-		max_size 50MB
-	}
-}
+# Uncomment ONLY behind VPN / IP allowlist — never expose publicly for banking workloads.
+# portainer.useautobus.com {
+# 	@allowed remote_ip 10.0.0.0/8 192.168.0.0/16
+# 	handle @allowed {
+# 		reverse_proxy https://autobus_portainer:9443 {
+# 			transport http {
+# 				tls_insecure_skip_verify
+# 			}
+# 		}
+# 	}
+# 	respond "Forbidden" 403
+# }
+#
+# db.useautobus.com {
+# 	@allowed remote_ip 10.0.0.0/8 192.168.0.0/16
+# 	handle @allowed {
+# 		reverse_proxy autobus_pgadmin:80
+# 	}
+# 	respond "Forbidden" 403
+# }
